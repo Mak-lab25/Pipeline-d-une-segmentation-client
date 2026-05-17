@@ -52,7 +52,7 @@ Chaque script a une responsabilité unique — si le modèle change, on retouche
 
 ## 🚀 Résultats
 
-- **3 segments** identifiés via méthode du coude (elbow method) et visualisation PCA
+- **3 segments** identifiés via méthode du coude (elbow method)
 - **18 766 utilisateurs** profilés sur 140 features
 - **API REST** permettant d'interroger le segment d'un utilisateur en temps réel
 
