@@ -1,0 +1,5 @@
+python3 -c "
+import pandas as pd
+df = pd.read_csv('rev-transactions.csv')
+df.sample(1000, random_state=42).to_csv('samples/rev-transactions-sample.csv', index=False)
+"

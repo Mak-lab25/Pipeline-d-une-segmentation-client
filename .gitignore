@@ -1,0 +1,6 @@
+echo "data/
+*.pkl
+*.parquet
+*.npy
+*.csv
+!samples/*.csv" > .gitignore
