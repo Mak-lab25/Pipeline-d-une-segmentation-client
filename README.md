@@ -1,14 +1,14 @@
 # 🏦 Customer Segmentation Pipeline — NexBank
 
-> **Segmentation automatique des clients d'une néo-banque** à partir de leurs habitudes de transaction, avec un pipeline de données modulaire et une API de prédiction en temps réel.
+> Segmentation automatique des clients d'une néo-banque à partir de leurs habitudes de transaction — de l'analyse exploratoire aux recommandations business, jusqu'à l'industrialisation en pipeline de données et API REST.
 
 ---
 
 ## 🎯 Le problème business
 
-Une néo-banque comme NexBank génère des millions de transactions par jour. Sans segmentation, toutes les communications et offres sont identiques pour tous les clients — ce qui est inefficace.
+Une néo-banque comme NexBank génère des millions de transactions par jour. Sans segmentation, toutes les communications et offres sont identiques pour tous les clients — ce qui est à la fois inefficace et coûteux.
 
-**L'objectif :** identifier automatiquement des groupes d'utilisateurs aux comportements similaires pour permettre à l'équipe marketing de personnaliser ses actions.
+**L'objectif :** identifier automatiquement des groupes d'utilisateurs aux comportements similaires, pour permettre à l'équipe marketing de personnaliser ses actions.
 
 | Segment | Profil | Action recommandée |
 |---|---|---|
@@ -26,24 +26,73 @@ Une néo-banque comme NexBank génère des millions de transactions par jour. Sa
 
 ---
 
-## 🏗️ Architecture du pipeline
+## 🔍 Démarche complète
+
+Ce projet couvre l'intégralité du cycle data — de l'exploration à la mise en production.
+
+### 1. Analyse exploratoire (EDA)
+
+📓 [`notebook/LeWagon_clustering.ipynb`](notebook/LeWagon_clustering.ipynb)
+
+- Distribution des transactions par type, devise, direction et catégorie marchande
+- Analyse de la présence physique vs en ligne (`ea_cardholderpresence`)
+- Test du Khi-2 pour identifier les associations significatives entre variables
+- Catégorisation des codes MCC en familles lisibles (General services, Transportation, Retail...)
+- Visualisations : barres empilées, boxplots, heatmaps, camemberts par devise
+
+**Principales observations :**
+- Les paiements par carte (`CARD_PAYMENT`) dominent largement les transactions sortantes
+- EUR, CHF et GBP concentrent les montants les plus élevés
+- Nombre élevé de refus de transactions en présentiel — piste d'amélioration UX identifiée
+
+---
+
+### 2. Segmentation client (Clustering)
+
+📓 [`notebook/LeWagon_clustering.ipynb`](notebook/LeWagon_clustering.ipynb)
+
+- Construction des features par utilisateur : `total_spent`, `avg_transaction_amount`, `inbound_ratio`, `top_merchant_category`, `top_merchant_country`...
+- Nettoyage des valeurs manquantes (`fillna`, `dropna`)
+- One-Hot encoding des variables catégorielles
+- Normalisation MinMaxScaler
+- Méthode du coude (elbow method) → **k=3 clusters optimal**
+- Visualisation PCA pour confirmer la séparation des clusters
+
+**Résultats :**
+
+| Cluster | Profil | Nb utilisateurs |
+|---|---|---|
+| Cluster 0 | Gamme moyenne | 3 748 |
+| Cluster 1 | Fort et moyen potentiel | 1 964 |
+| Cluster 2 | Majorité à fort potentiel | 3 895 |
+
+---
+
+### 3. Recommandations business
+
+📄 [`presentation/NexBank_clustering.pdf`](presentation/NexBank_clustering.pdf)
+
+- **Personnalisation des offres** : avantages spécifiques aux clients à fort potentiel, promotions adaptées aux Mid Spenders
+- **Réactivation** : campagnes ciblées pour encourager les utilisateurs à faible engagement
+- **Optimisation UX** : améliorer la catégorisation des transactions et analyser les causes des refus en présentiel
+- **Perspectives** : segmentation dynamique (temporelle, hiérarchique), affinage avec silhouette score et DBSCAN
+
+---
+
+### 4. Industrialisation — Pipeline engineering
+
+Après la phase analytique, le projet a été restructuré en pipeline modulaire pour être réutilisable, maintenable et exposable via API.
 
 ```
 rev-transactions.csv (2.7M lignes)
         ↓
-   ingest.py          → nettoyage + agrégation par utilisateur (DuckDB)
+   ingest.py      → nettoyage + agrégation par utilisateur (DuckDB)
         ↓
-   data/df_user.parquet
+   features.py    → encodage One-Hot + normalisation MinMaxScaler
         ↓
-   features.py        → encodage One-Hot + normalisation MinMaxScaler
+   train.py       → KMeans (k=3) + elbow method + nommage des segments
         ↓
-   data/df_scaled.parquet
-        ↓
-   train.py           → KMeans (k=3) + elbow method + nommage des segments
-        ↓
-   data/kmeans_model.pkl
-        ↓
-   api.py             → API FastAPI exposant le modèle via 3 endpoints
+   api.py         → API FastAPI — 3 endpoints publics
 ```
 
 Chaque script a une responsabilité unique — si le modèle change, on retouche uniquement `train.py` sans toucher au reste.
@@ -52,9 +101,10 @@ Chaque script a une responsabilité unique — si le modèle change, on retouche
 
 ## 🚀 Résultats
 
-- **3 segments** identifiés via méthode du coude (elbow method)
+- **3 segments** identifiés et nommés (Low / Mid / High Spender)
 - **18 766 utilisateurs** profilés sur 140 features
 - **API REST** permettant d'interroger le segment d'un utilisateur en temps réel
+- Pipeline reproductible en 4 commandes
 
 ---
 
@@ -65,6 +115,7 @@ Chaque script a une responsabilité unique — si le modèle change, on retouche
 | `DuckDB` | Lecture et agrégation SQL de 2.7M transactions sans surcharge mémoire |
 | `Pandas` | Manipulation des DataFrames |
 | `Scikit-learn` | KMeans, MinMaxScaler, PCA |
+| `Matplotlib / Seaborn` | Visualisations EDA |
 | `FastAPI` | Exposition du modèle via API REST |
 | `Uvicorn` | Serveur ASGI pour lancer l'API |
 | `Parquet` | Format de stockage intermédiaire entre les étapes |
@@ -74,16 +125,14 @@ Chaque script a une responsabilité unique — si le modèle change, on retouche
 ## 🛠️ Installation
 
 ```bash
-git clone https://github.com/ton-username/customer-segmentation
-cd customer-segmentation
+git clone https://github.com/Mak-lab25/Pipeline-d-une-segmentation-client
+cd Pipeline-d-une-segmentation-client
 pip install -r requirements.txt
 ```
 
 ---
 
 ## ▶️ Lancer le pipeline
-
-Les scripts s'exécutent dans l'ordre suivant :
 
 ```bash
 # Étape 1 — Nettoyage et agrégation des transactions
@@ -99,11 +148,11 @@ python train.py
 uvicorn api:app --reload
 ```
 
+Puis ouvre `http://localhost:8000/docs` pour accéder à la documentation interactive de l'API.
+
 ---
 
 ## 🔌 API — Endpoints
-
-Une fois l'API lancée, ouvre `http://localhost:8000/docs` pour accéder à la documentation interactive.
 
 ### `GET /segment?user_id=user_898`
 Retourne le segment d'un utilisateur existant.
@@ -120,7 +169,7 @@ Retourne le segment d'un utilisateur existant.
 ```
 
 ### `POST /predict`
-Prédit le segment d'un **nouvel** utilisateur à partir de ses données.
+Prédit le segment d'un nouvel utilisateur à partir de ses données.
 
 ```json
 {
@@ -137,52 +186,31 @@ Prédit le segment d'un **nouvel** utilisateur à partir de ses données.
 }
 ```
 
-Réponse :
-```json
-{
-  "segment": "Mid Spender",
-  "cluster_id": 2,
-  "description": "Utilisateur régulier avec des montants modérés."
-}
-```
-
 ### `GET /segments`
-Retourne le résumé de tous les segments.
-
-```json
-[
-  {"segment": "High Spender", "nb_utilisateurs": 8640, "total_spent_moyen": 35665099.9},
-  {"segment": "Mid Spender",  "nb_utilisateurs": 6286, "total_spent_moyen": 17251256.15},
-  {"segment": "Low Spender",  "nb_utilisateurs": 3840, "total_spent_moyen": 13049096.37}
-]
-```
+Retourne le résumé de tous les segments (nb utilisateurs, dépense moyenne, panier moyen).
 
 ---
 
 ## 📁 Structure du projet
 
 ```
-customer-segmentation/
-├── ingest.py              # Étape 1 : lecture CSV + agrégation DuckDB
-├── features.py            # Étape 2 : encodage + scaling
-├── train.py               # Étape 3 : KMeans + elbow method
-├── api.py                 # Étape 4 : API FastAPI
-├── requirements.txt
+Pipeline-d-une-segmentation-client/
 ├── README.md
-├── data/
-│   ├── df_user.parquet        # Features par utilisateur (produit par ingest.py)
-│   ├── df_scaled.parquet      # Features scalées (produit par features.py)
-│   ├── df_clustered.parquet   # Résultats avec segments (produit par train.py)
-│   ├── kmeans_model.pkl       # Modèle entraîné
-│   ├── scaler.pkl             # Scaler pour nouvelles prédictions
-│   ├── feature_columns.pkl    # Colonnes attendues par le modèle
-│   ├── cluster_summary.csv    # Profil moyen par segment
-│   └── elbow_plot.png         # Graphique méthode du coude
+├── requirements.txt
+├── .gitignore
+├── notebook/
+│   └── LeWagon_clustering.ipynb     # Analyse complète : EDA + clustering
+├── presentation/
+│   └── NexBank_clustering.pdf       # Résultats et recommandations business
+├── ingest.py                        # Étape 1 : lecture CSV + agrégation DuckDB
+├── features.py                      # Étape 2 : encodage + scaling
+├── train.py                         # Étape 3 : KMeans + elbow method
+├── api.py                           # Étape 4 : API FastAPI
 └── samples/
-    └── rev-transactions-sample.csv   # Extrait anonymisé pour test
+    └── rev-transactions-sample.csv  # Extrait anonymisé (1000 lignes) pour test
 ```
 
-> ⚠️ Le fichier `rev-transactions.csv` (2.7M lignes) n'est pas inclus dans le repo pour des raisons de taille. Un extrait de 1000 lignes est disponible dans `samples/`.
+> ⚠️ Le fichier `rev-transactions.csv` (2.7M lignes) n'est pas inclus pour des raisons de taille. Un extrait de 1000 lignes est disponible dans `samples/`.
 
 ---
 
@@ -192,4 +220,4 @@ Ce pipeline est adaptable à tout contexte de segmentation comportementale :
 - Segmentation clients e-commerce
 - Scoring utilisateurs d'une app mobile
 - Segmentation abonnés d'un service SaaS
-- Analyse comportementale dans le secteur bancaire ou assurance
+- Analyse comportementale en secteur bancaire ou assurance
