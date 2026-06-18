@@ -32,7 +32,7 @@ Ce projet couvre l'intégralité du cycle data — de l'exploration à la mise e
 
 ### 1. Analyse exploratoire (EDA)
 
-📓 [`notebook/LeWagon_clustering.ipynb`](notebook/LeWagon_clustering.ipynb)
+📓 [`LeWagon_clustering.ipynb`](LeWagon_clustering.ipynb)
 
 - Distribution des transactions par type, devise, direction et catégorie marchande
 - Analyse de la présence physique vs en ligne (`ea_cardholderpresence`)
@@ -49,7 +49,7 @@ Ce projet couvre l'intégralité du cycle data — de l'exploration à la mise e
 
 ### 2. Segmentation client (Clustering)
 
-📓 [`notebook/LeWagon_clustering.ipynb`](notebook/LeWagon_clustering.ipynb)
+📓 [`LeWagon_clustering.ipynb`](LeWagon_clustering.ipynb)
 
 - Construction des features par utilisateur : `total_spent`, `avg_transaction_amount`, `inbound_ratio`, `top_merchant_category`, `top_merchant_country`...
 - Nettoyage des valeurs manquantes (`fillna`, `dropna`)
@@ -70,7 +70,7 @@ Ce projet couvre l'intégralité du cycle data — de l'exploration à la mise e
 
 ### 3. Recommandations business
 
-📄 [`presentation/NexBank_clustering.pdf`](presentation/NexBank_clustering.pdf)
+📄 [`projet_clustering_wagon.pdf`](projet_clustering_wagon.pdf)
 
 - **Personnalisation des offres** : avantages spécifiques aux clients à fort potentiel, promotions adaptées aux Mid Spenders
 - **Réactivation** : campagnes ciblées pour encourager les utilisateurs à faible engagement
