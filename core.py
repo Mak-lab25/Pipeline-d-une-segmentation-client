@@ -145,7 +145,6 @@ def predict_segment(features: dict, kmeans, scaler, feature_columns, df_clustere
 
     return {
         "segment": segment,
-        "cluster_id": cluster_id,
         "description": SEGMENT_DESCRIPTIONS.get(segment, ""),
         "action": SEGMENT_ACTIONS.get(segment, ""),
     }
