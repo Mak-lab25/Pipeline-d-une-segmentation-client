@@ -118,19 +118,22 @@ def train_kmeans(df_features: pd.DataFrame, n_clusters: int = N_CLUSTERS):
 
 def name_segments(df_clustered: pd.DataFrame, n_clusters: int) -> dict:
     """
-    Attribue un nom métier à chaque cluster selon le total_spent moyen.
-    Les noms sont basés sur l'analyse du notebook (cellule 50).
+    Attribue un nom métier à chaque cluster selon son taux d'usage marchand.
+
+    Le tri se fait sur merchant_ratio (part des transactions effectuées chez
+    un commerçant) plutôt que sur total_spent : c'est cette variable qui
+    sépare réellement les clusters. Trier sur la dépense produisait des noms
+    faux — le groupe le moins dépensier avait le panier moyen le plus élevé.
+
+    Ne fonctionne que pour k=3 ; au-delà, retombe sur un libellé générique.
     """
-    # Calcul du total_spent moyen par cluster pour les ordonner
-    means = df_clustered.groupby("cluster")["total_spent"].mean().sort_values()
+    labels = ["Compte de réception", "Usage partiel", "Compte principal"]
 
-    segment_names = {}
-    labels = ["Low Spender", "Mid Spender", "High Spender"]
+    if n_clusters != len(labels):
+        return {c: f"Segment {c}" for c in sorted(df_clustered["cluster"].unique())}
 
-    for i, cluster_id in enumerate(means.index):
-        segment_names[cluster_id] = labels[i]
-
-    return segment_names
+    means = df_clustered.groupby("cluster")["merchant_ratio"].mean().sort_values()
+    return {cluster_id: labels[i] for i, cluster_id in enumerate(means.index)}
 
 
 # =========================

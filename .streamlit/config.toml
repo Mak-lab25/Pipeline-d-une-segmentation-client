@@ -1,0 +1,21 @@
+# A placer dans .streamlit/config.toml a la racine du projet.
+
+[theme]
+base = "light"
+
+# Indigo electrique : elements interactifs (curseurs, focus, onglet actif,
+# boutons). Vif, mais assez fonce pour rester lisible sur fond clair.
+primaryColor = "#4B3BFF"
+
+# Blanc legerement lilas : la page n'est jamais grise, les couleurs vives
+# posees dessus ressortent sans vibrer.
+backgroundColor = "#F7F5FF"
+
+# Surfaces (cartes, tableaux, expanders) : blanc franc pour le contraste.
+secondaryBackgroundColor = "#FFFFFF"
+
+# Bleu nuit profond plutot qu'un noir : le texte appartient a la meme
+# famille que l'indigo interactif.
+textColor = "#1E1B3A"
+
+font = "sans serif"

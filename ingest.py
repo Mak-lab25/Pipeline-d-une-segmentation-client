@@ -119,7 +119,7 @@ def build_user_features(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
                 direction,
                 user_id,
                 created_date,
-                COALESCE(ea_cardholderpresence, 'unknown')        AS ea_cardholderpresence,
+                COALESCE(ea_cardholderpresence, 'unknown')         AS ea_cardholderpresence,
                 COALESCE(ea_merchant_city,      'unknown_city')    AS ea_merchant_city,
                 COALESCE(ea_merchant_country,   'unknown_country') AS ea_merchant_country,
                 COALESCE(ea_merchant_mcc,       9999)              AS ea_merchant_mcc,
@@ -127,41 +127,52 @@ def build_user_features(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
             FROM cleaned
             WHERE user_id IS NOT NULL
               AND created_date IS NOT NULL
+              AND transactions_state = 'COMPLETED'
         ),
 
         agg AS (
             SELECT
                 user_id,
 
-                -- Montants
                 SUM(amount_usd)                             AS total_spent,
                 AVG(amount_usd)                             AS avg_transaction_amount,
 
-                -- Volume de transactions
                 COUNT(*)                                    AS total_transactions,
                 COUNT(*) FILTER (WHERE direction = 'INBOUND')  AS inbound_transactions,
                 COUNT(*) FILTER (WHERE direction = 'OUTBOUND') AS outbound_transactions,
 
-                -- Diversité des marchands
-                COUNT(DISTINCT ea_merchant_mcc)             AS unique_merchants,
+                COUNT(DISTINCT ea_merchant_mcc) FILTER (WHERE ea_merchant_mcc <> 9999)
+                                                            AS unique_merchants,
+                COUNT(*) FILTER (WHERE ea_merchant_mcc <> 9999)  AS merchant_transactions,
 
-                -- Top pays, devise, catégorie (mode approché par fréquence)
-                MODE(ea_merchant_country)                   AS top_merchant_country,
+                COALESCE(
+                    MODE(ea_merchant_country) FILTER (WHERE ea_merchant_country <> 'unknown_country'),
+                    'unknown_country'
+                )                                           AS top_merchant_country,
+
                 MODE(transactions_currency)                 AS top_merchant_currency,
-                MODE(merchant_category)                     AS top_merchant_category
+
+                COALESCE(
+                    MODE(merchant_category) FILTER (WHERE merchant_category <> 'Unknown'),
+                    'Unknown'
+                )                                           AS top_merchant_category
 
             FROM base
             GROUP BY user_id
         )
 
-        SELECT
+            SELECT
             *,
-            -- Ratio inbound calculé après agrégation
             CASE
                 WHEN total_transactions > 0
                 THEN CAST(inbound_transactions AS FLOAT) / total_transactions
                 ELSE 0
-            END AS inbound_ratio
+            END AS inbound_ratio,
+            CASE
+                WHEN total_transactions > 0
+                THEN CAST(merchant_transactions AS FLOAT) / total_transactions
+                ELSE 0
+            END AS merchant_ratio
         FROM agg
     """).df()
 
